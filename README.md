@@ -39,6 +39,21 @@ period=60
 
 If you omit `algorithm`, the tool uses SHA1. If you omit `digits`, the tool uses 6 digits. If you omit `period`, the tool uses 30 seconds. The value of `digits` must be 6 or 8. The value of `algorithm` must be SHA1, SHA256, or SHA512. The value of `type` must be `totp`. An unknown key or a duplicate key is an error.
 
+## Store the secret
+
+The example above stores the secret in plaintext. For a real store, keep the encrypted form in the same directory.
+
+```sh
+printf 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n' | age -p > ~/.otp/github.age
+printf 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n' | gpg -e -r you@example.com > ~/.otp/github.gpg
+```
+
+`age -p` asks for a passphrase and needs no key file. `age -e -r` uses a public key from `age-keygen`. Keep the identity file and the gpg secret key outside `~/.otp`.
+
+Read the passphrase file with `otpauth-gen --age ~/.otp/github.age`. Read the gpg file with `otpauth-gen --gpg ~/.otp/github.gpg`. An identity file needs `-i PATH`.
+
+Do not put a plain file in a git repository. An encrypted file does not expose the secret. Keep the identity file out of the repository.
+
 ## Other input forms
 
 The tool also accepts an `otpauth://` URI. Put the URI in the file or in the pipe. The tool ignores the label and the `issuer` parameter, because the file name is the name of the account.
@@ -55,7 +70,7 @@ The tool has no encryption code. It starts `gpg` or `age` and reads the plaintex
 
 ```sh
 otpauth-gen --gpg ~/.otp/github.gpg
-otpauth-gen --age -i ~/.age/identity.txt ~/.otp/github.age
+otpauth-gen --age -i ~/.age/key.txt ~/.otp/github.age
 age -d ~/.otp/github.age | otpauth-gen
 ```
 
