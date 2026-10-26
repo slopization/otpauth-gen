@@ -59,11 +59,17 @@ The example above stores the test secret in plaintext. For a real store, keep th
 
 Do not type the credential as a command argument. The shell writes the command line to its history file, and `ps` can show the line to other users.
 
+Choose `age` or `gpg`. Run one of these commands.
+
 ```sh
+# age
 read -rsp 'otpauth URI: ' uri; echo; printf '%s\n' "$uri" | age -p > ~/.otp/github.age
+
+# gpg
+read -rsp 'otpauth URI: ' uri; echo; printf '%s\n' "$uri" | gpg -e -r you@example.com > ~/.otp/github.gpg
 ```
 
-`age -p` asks for a passphrase and needs no key file. `age -e -r` uses a public key from `age-keygen`, and `gpg -e -r RECIPIENT` uses a gpg key. Keep the identity file and the gpg secret key outside `~/.otp`.
+`age -p` asks for a passphrase and needs no key file. `age -e -r` uses a public key from `age-keygen`. `gpg -e -r` uses the public key of the recipient. Keep the identity file and the gpg secret key outside `~/.otp`.
 
 Read the passphrase file with `otpauth-gen --age ~/.otp/github.age`. Read the gpg file with `otpauth-gen --gpg ~/.otp/github.gpg`. An identity file needs `-i PATH`.
 
