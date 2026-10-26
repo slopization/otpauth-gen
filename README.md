@@ -8,17 +8,23 @@ Run `cargo build --release`. The binary is at `target/release/otpauth-gen`. Copy
 
 ## Use
 
-Send the credential to the tool on standard input.
+A credential is usually a full `otpauth://` URI. The tool reads it from standard input. Read the URI with no echo, and send it to the tool.
 
-```sh
-printf 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ' | otpauth-gen
+```console
+$ read -rsp 'otpauth URI: ' uri; echo; printf '%s\n' "$uri" | otpauth-gen
+otpauth URI: 
+287082
 ```
+
+Paste the URI after the prompt, and it does not appear on the screen. `-s` turns off the echo. `-p` sets the prompt, and it needs bash. `read` sets a variable and writes nothing to standard output, so the `printf` line sends the value.
+
+`read` runs before the pipe. A pipeline runs in a subshell in bash, so a variable that `read` sets inside a pipe is lost.
 
 The tool writes the code and one newline to standard output. It writes errors to standard error. It writes nothing to standard output after an error. For a plain credential, the tool stops with an error if standard input is a terminal.
 
 ## The credential file
 
-Put one credential in one file. The name of the file is the name of the account. Keep the directory private, with mode 700.
+Put one credential in one file. The name of the file is the name of the account. Keep the directory private, with mode 700. The file can hold the full URI. The tool ignores the label and the `issuer` parameter, because the file name is the name of the account. The compact form below is also accepted.
 
 ```sh
 mkdir -m 700 ~/.otp
@@ -26,6 +32,8 @@ printf 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n' > ~/.otp/github
 chmod 600 ~/.otp/github
 otpauth-gen ~/.otp/github
 ```
+
+The secret in this example is the public test secret from RFC 6238. Do not use it for a real account.
 
 A credential has one required key, `secret`. It has four optional keys: `algorithm`, `digits`, `period`, and `type`. The value of `secret` is a base32 string. The tool ignores spaces, letter case, and `=` padding in the secret.
 
@@ -41,28 +49,25 @@ If you omit `algorithm`, the tool uses SHA1. If you omit `digits`, the tool uses
 
 ## Store the secret
 
-The example above stores the secret in plaintext. For a real store, keep the encrypted form in the same directory.
+The example above stores the test secret in plaintext. For a real store, keep the encrypted form in the same directory.
+
+Do not type the credential as a command argument. The shell writes the command line to its history file, and `ps` can show the line to other users.
 
 ```sh
-printf 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n' | age -p > ~/.otp/github.age
-printf 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n' | gpg -e -r you@example.com > ~/.otp/github.gpg
+read -rsp 'otpauth URI: ' uri; echo; printf '%s\n' "$uri" | age -p > ~/.otp/github.age
 ```
 
-`age -p` asks for a passphrase and needs no key file. `age -e -r` uses a public key from `age-keygen`. Keep the identity file and the gpg secret key outside `~/.otp`.
+`age -p` asks for a passphrase and needs no key file. `age -e -r` uses a public key from `age-keygen`, and `gpg -e -r RECIPIENT` uses a gpg key. Keep the identity file and the gpg secret key outside `~/.otp`.
 
 Read the passphrase file with `otpauth-gen --age ~/.otp/github.age`. Read the gpg file with `otpauth-gen --gpg ~/.otp/github.gpg`. An identity file needs `-i PATH`.
 
+An editor that writes its buffer to a program is another way to enter the URI. Vim and Neovim do this with `:w !otpauth-gen`. Start Vim with `-n -i NONE` so it keeps no swap file and no viminfo file. Type the URI, run `:w !otpauth-gen`, and quit with `:q!`. The code appears in the message area of the editor. Nano cannot write its buffer to a program.
+
 Do not put a plain file in a git repository. An encrypted file does not expose the secret. Keep the identity file out of the repository.
 
-## Other input forms
+## Bare secrets
 
-The tool also accepts an `otpauth://` URI. Put the URI in the file or in the pipe. The tool ignores the label and the `issuer` parameter, because the file name is the name of the account.
-
-```sh
-printf 'otpauth://totp/GitHub:alice?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ' | otpauth-gen
-```
-
-The tool also accepts one bare base32 string. This form uses SHA1, 6 digits, and 30 seconds.
+The tool also accepts one bare base32 secret. This form uses SHA1, 6 digits, and 30 seconds. If you have the URI, use it instead.
 
 ## Decryption
 
