@@ -69,9 +69,9 @@ openssl enc -d -in github.enc | otpauth-gen
 
 ## Security
 
-A plain file is readable by every process that runs as you. A backup program and a search command also read it. Encrypt the file at rest with `gpg` or `age`.
+A plain file keeps the secret without encryption. A backup program, a search command, and every process that runs as you can read it. Encrypt the file at rest with `gpg` or `age`.
 
-The tool refuses a plain file that other users can read. Run `chmod 600` on the file after the message. The tool does not test the mode of an encrypted file.
+The tool warns when it reads a plain file. The warning gives the path and the risk. The tool does not refuse the file and does not change it. The tool does not test the mode of an encrypted file.
 
 The secret never goes on the command line. The tool has no flag for a password or a key. The code is the only output on standard output.
 

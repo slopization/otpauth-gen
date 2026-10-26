@@ -120,7 +120,7 @@ fn read_plaintext(file: &str) -> Result<Zeroizing<Vec<u8>>> {
         }
         read_all(io::stdin().lock(), "standard input")
     } else {
-        check_file_mode(file)?;
+        eprintln!("otpauth-gen: warning: {}", plaintext_file_warning(file));
         let handle =
             fs::File::open(file).map_err(|e| Error::new(format!("cannot open {file}: {e}")))?;
         read_all(handle, file)
@@ -196,26 +196,25 @@ fn read_all<R: Read>(mut reader: R, what: &str) -> Result<Zeroizing<Vec<u8>>> {
 }
 
 #[cfg(unix)]
-fn check_file_mode(file: &str) -> Result<()> {
+fn plaintext_file_warning(file: &str) -> String {
     use std::os::unix::fs::PermissionsExt;
 
-    let metadata =
-        fs::metadata(file).map_err(|e| Error::new(format!("cannot open {file}: {e}")))?;
-    if !metadata.file_type().is_file() {
-        return Ok(());
+    let mut message = format!("{file}: the secret is stored in plaintext");
+    if let Ok(metadata) = fs::metadata(file) {
+        if metadata.file_type().is_file() {
+            let mode = metadata.permissions().mode() & 0o777;
+            if mode & 0o077 != 0 {
+                message.push_str(&format!(" and other users can read it (mode {mode:04o})"));
+            }
+        }
     }
-    let mode = metadata.permissions().mode() & 0o777;
-    if mode & 0o077 != 0 {
-        return Err(Error::new(format!(
-            "{file}: permissions {mode:04o} let other users read this file; run chmod 600 {file}"
-        )));
-    }
-    Ok(())
+    message.push('.');
+    message
 }
 
 #[cfg(not(unix))]
-fn check_file_mode(_file: &str) -> Result<()> {
-    Ok(())
+fn plaintext_file_warning(file: &str) -> String {
+    format!("{file}: the secret is stored in plaintext.")
 }
 
 fn parse(text: &str) -> Result<(TotpBuilder, Zeroizing<Vec<u8>>)> {

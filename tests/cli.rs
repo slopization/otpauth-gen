@@ -106,13 +106,15 @@ mod unix {
     }
 
     #[test]
-    fn refuses_a_plaintext_file_that_others_can_read() {
+    fn warns_about_a_plaintext_file_that_others_can_read() {
         let path = temp_file("loose", &credential(8), 0o644);
         let (status, stdout, stderr) = run(&["--now", "59", path.to_str().unwrap()], "");
         let _ = fs::remove_file(&path);
-        assert_eq!(status, 2);
-        assert_eq!(stdout, "");
-        assert!(stderr.contains("chmod 600"), "stderr: {stderr}");
+        assert_eq!(status, 0);
+        assert_eq!(stdout, "94287082\n");
+        assert!(stderr.contains("plaintext"), "stderr: {stderr}");
+        assert!(stderr.contains("0644"), "stderr: {stderr}");
+        assert!(!stderr.contains("chmod"), "stderr: {stderr}");
     }
 
     #[test]
@@ -122,6 +124,8 @@ mod unix {
         let _ = fs::remove_file(&path);
         assert_eq!(status, 0, "stderr: {stderr}");
         assert_eq!(stdout, "94287082\n");
+        assert!(stderr.contains("plaintext"), "stderr: {stderr}");
+        assert!(!stderr.contains("0644"), "stderr: {stderr}");
     }
 
     #[test]
