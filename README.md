@@ -20,6 +20,12 @@ Paste the URI after the prompt, and it does not appear on the screen. `-s` turns
 
 `read` runs before the pipe. A pipeline runs in a subshell in bash, so a variable that `read` sets inside a pipe is lost.
 
+A `printf` pipe is shorter and shows what happens, but the secret goes into the shell history. Use this form only with the public test secret.
+
+```sh
+printf '%s\n' 'otpauth://totp/GitHub:alice?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&issuer=GitHub' | otpauth-gen
+```
+
 The tool writes the code and one newline to standard output. It writes errors to standard error. It writes nothing to standard output after an error. For a plain credential, the tool stops with an error if standard input is a terminal.
 
 ## The credential file
