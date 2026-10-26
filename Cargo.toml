@@ -1,0 +1,17 @@
+[package]
+name = "otpauth-gen"
+version = "0.1.0"
+edition = "2021"
+description = "Read one TOTP credential, write one one-time code"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+totp_rfc6238 = { version = "0.7.0", features = ["oathuri"] }
+zeroize = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1
