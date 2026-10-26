@@ -88,6 +88,12 @@ The tool has no encryption code. It starts `gpg` or `age` and reads the plaintex
 ```sh
 otpauth-gen --gpg ~/.otp/github.gpg
 otpauth-gen --age -i ~/.age/key.txt ~/.otp/github.age
+```
+
+If `--gpg` waits, let the shell start gpg and pipe the plaintext. The shell gives gpg the terminal.
+
+```sh
+gpg --quiet --decrypt ~/.otp/github.gpg | otpauth-gen
 age -d ~/.otp/github.age | otpauth-gen
 ```
 
