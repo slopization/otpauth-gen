@@ -91,7 +91,7 @@ otpauth-gen --age -i ~/.age/key.txt ~/.otp/github.age
 age -d ~/.otp/github.age | otpauth-gen
 ```
 
-With a FILE, the decryptor opens the file, so its password prompt can use the terminal. With a pipe, the decryptor reads the encrypted bytes on standard input. If gpg needs a passphrase with a pipe, set `GPG_TTY` to the terminal first. A failed decryptor stops the tool before any code is written.
+With a FILE, the decryptor opens the file. With a pipe, the decryptor reads the encrypted bytes on standard input. If `GPG_TTY` is unset, the tool sets it for gpg, so the passphrase prompt works. A failed decryptor stops the tool before any code is written.
 
 For another tool, use a pipe.
 

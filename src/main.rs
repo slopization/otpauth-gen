@@ -155,6 +155,12 @@ fn read_decrypted(cli: &Cli) -> Result<Zeroizing<Vec<u8>>> {
 
     // A file goes to the decryptor as an argument, so the terminal stays free
     // for a passphrase prompt. A pipe goes through standard input.
+    if cli.gpg && std::env::var_os("GPG_TTY").is_none() {
+        if let Some(terminal) = terminal_name() {
+            command.env("GPG_TTY", terminal);
+        }
+    }
+
     command.stdin(Stdio::inherit());
     command.stdout(Stdio::piped()).stderr(Stdio::inherit());
     let mut child = command
@@ -194,6 +200,31 @@ fn push_file_argument(command: &mut Command, path: &str) {
         command.arg("--");
     }
     command.arg(path);
+}
+
+#[cfg(unix)]
+fn terminal_name() -> Option<String> {
+    for descriptor in [libc::STDIN_FILENO, libc::STDERR_FILENO] {
+        // SAFETY: isatty and ttyname accept any file descriptor. ttyname
+        // returns a null-terminated string that this function copies at once.
+        if unsafe { libc::isatty(descriptor) } != 1 {
+            continue;
+        }
+        let pointer = unsafe { libc::ttyname(descriptor) };
+        if pointer.is_null() {
+            continue;
+        }
+        let name = unsafe { std::ffi::CStr::from_ptr(pointer) };
+        if let Ok(name) = name.to_str() {
+            return Some(name.to_string());
+        }
+    }
+    None
+}
+
+#[cfg(not(unix))]
+fn terminal_name() -> Option<String> {
+    None
 }
 
 fn read_all<R: Read>(mut reader: R, what: &str) -> Result<Zeroizing<Vec<u8>>> {

@@ -349,6 +349,7 @@ name = "otpauth-gen"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "libc",
  "totp_rfc6238",
  "zeroize",
 ]
