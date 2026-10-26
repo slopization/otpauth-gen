@@ -128,9 +128,18 @@ fn read_plaintext(file: &str) -> Result<Zeroizing<Vec<u8>>> {
 }
 
 fn read_decrypted(cli: &Cli) -> Result<Zeroizing<Vec<u8>>> {
+    let path = if cli.file == "-" {
+        None
+    } else {
+        Some(cli.file.as_str())
+    };
+
     let (program, mut command) = if cli.gpg {
         let mut command = Command::new("gpg");
         command.arg("--quiet").arg("--decrypt");
+        if let Some(path) = path {
+            push_file_argument(&mut command, path);
+        }
         ("gpg", command)
     } else {
         let mut command = Command::new("age");
@@ -138,17 +147,15 @@ fn read_decrypted(cli: &Cli) -> Result<Zeroizing<Vec<u8>>> {
         if let Some(identity) = &cli.identity {
             command.arg("-i").arg(identity);
         }
+        if let Some(path) = path {
+            push_file_argument(&mut command, path);
+        }
         ("age", command)
     };
 
-    if cli.file == "-" {
-        command.stdin(Stdio::inherit());
-    } else {
-        let handle = fs::File::open(&cli.file)
-            .map_err(|e| Error::new(format!("cannot open {}: {e}", cli.file)))?;
-        command.stdin(Stdio::from(handle));
-    }
-
+    // A file goes to the decryptor as an argument, so the terminal stays free
+    // for a passphrase prompt. A pipe goes through standard input.
+    command.stdin(Stdio::inherit());
     command.stdout(Stdio::piped()).stderr(Stdio::inherit());
     let mut child = command
         .spawn()
@@ -180,6 +187,13 @@ fn read_decrypted(cli: &Cli) -> Result<Zeroizing<Vec<u8>>> {
     }
 
     Ok(buffer)
+}
+
+fn push_file_argument(command: &mut Command, path: &str) {
+    if path.starts_with('-') {
+        command.arg("--");
+    }
+    command.arg(path);
 }
 
 fn read_all<R: Read>(mut reader: R, what: &str) -> Result<Zeroizing<Vec<u8>>> {

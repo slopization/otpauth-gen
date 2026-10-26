@@ -140,6 +140,19 @@ mod unix {
     }
 
     #[test]
+    fn decryptor_opens_the_file_by_path() {
+        let dir = temp_dir("filearg");
+        fake_gpg(&dir, "#!/bin/sh\nfor last; do :; done\ncat -- \"$last\"\n");
+        let path = temp_file("cipher-arg", &credential(8), 0o600);
+        let (status, stdout, stderr) =
+            run_with_path(&["--gpg", "--now", "59", path.to_str().unwrap()], "", &dir);
+        let _ = fs::remove_file(&path);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(status, 0, "stderr: {stderr}");
+        assert_eq!(stdout, "94287082\n");
+    }
+
+    #[test]
     fn a_failed_decryptor_writes_no_code() {
         let dir = temp_dir("bad");
         fake_gpg(&dir, "#!/bin/sh\nexit 3\n");
@@ -154,7 +167,7 @@ mod unix {
     #[test]
     fn encrypted_input_skips_the_mode_check() {
         let dir = temp_dir("perm");
-        fake_gpg(&dir, "#!/bin/sh\ncat\n");
+        fake_gpg(&dir, "#!/bin/sh\nfor last; do :; done\ncat -- \"$last\"\n");
         let path = temp_file("cipher", &credential(8), 0o644);
         let (status, stdout, stderr) =
             run_with_path(&["--gpg", "--now", "59", path.to_str().unwrap()], "", &dir);
