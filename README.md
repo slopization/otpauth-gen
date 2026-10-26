@@ -90,14 +90,16 @@ otpauth-gen --gpg ~/.otp/github.gpg
 otpauth-gen --age -i ~/.age/key.txt ~/.otp/github.age
 ```
 
-If `--gpg` waits, let the shell start gpg and pipe the plaintext. The shell gives gpg the terminal.
+The tool runs gpg with `--pinentry-mode loopback`. gpg asks for the passphrase on the terminal, and gpg-agent does not start pinentry. `GPG_TTY` is not needed.
+
+If `--gpg` still waits, let the shell start gpg and pipe the plaintext. The shell gives gpg the terminal.
 
 ```sh
 gpg --quiet --decrypt ~/.otp/github.gpg | otpauth-gen
 age -d ~/.otp/github.age | otpauth-gen
 ```
 
-With a FILE, the decryptor opens the file. With a pipe, the decryptor reads the encrypted bytes on standard input. If `GPG_TTY` is unset, the tool sets it for gpg, so the passphrase prompt works. A failed decryptor stops the tool before any code is written.
+With a FILE, the decryptor opens the file. With a pipe, the decryptor reads the encrypted bytes on standard input. A failed decryptor stops the tool before any code is written.
 
 For another tool, use a pipe.
 

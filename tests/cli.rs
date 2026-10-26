@@ -153,6 +153,22 @@ mod unix {
     }
 
     #[test]
+    fn gpg_uses_loopback_by_default() {
+        let dir = temp_dir("loopback");
+        fake_gpg(
+            &dir,
+            "#!/bin/sh\nfor arg; do\nif [ \"$arg\" = \"loopback\" ]; then\nfor last; do :; done\ncat -- \"$last\"\nexit 0\nfi\ndone\nexit 4\n",
+        );
+        let path = temp_file("cipher-loopback", &credential(8), 0o600);
+        let (status, stdout, stderr) =
+            run_with_path(&["--gpg", "--now", "59", path.to_str().unwrap()], "", &dir);
+        let _ = fs::remove_file(&path);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(status, 0, "stderr: {stderr}");
+        assert_eq!(stdout, "94287082\n");
+    }
+
+    #[test]
     fn a_failed_decryptor_writes_no_code() {
         let dir = temp_dir("bad");
         fake_gpg(&dir, "#!/bin/sh\nexit 3\n");
